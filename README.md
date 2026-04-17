@@ -44,7 +44,7 @@ cp .env.example .env
 ### 4. Start the server
 ```bash
 # From inside the cybersec_compliance folder:
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 The `--host 0.0.0.0` makes it accessible to other computers on the same WiFi/router.
