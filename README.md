@@ -190,6 +190,6 @@ cybersec_compliance/
 ---
 
 ## Next Steps
-
+- **Phase 1:** Build the API Backend engine annd ENdpoits
 - **Phase 2:** Angular frontend dashboard
 - **Phase 3:** Enhanced agent (Windows event log support, scheduled reports)
