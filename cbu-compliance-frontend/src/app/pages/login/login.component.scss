@@ -1,0 +1,47 @@
+.login-page {
+  display: flex; min-height: 100vh;
+}
+.login-left {
+  flex: 1; background: linear-gradient(135deg, #0f2040 0%, #1e3a5f 60%, #0ea5e9 100%);
+  display: flex; flex-direction: column; justify-content: center; padding: 60px;
+}
+.brand { margin-bottom: 48px; }
+.brand-icon { font-size: 52px; margin-bottom: 16px; }
+.brand h1 { font-size: 32px; font-weight: 700; line-height: 1.2; margin-bottom: 10px; }
+.brand p { color: rgba(255,255,255,.6); font-size: 14px; }
+.features { display: flex; flex-direction: column; gap: 14px; }
+.feature { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,.8); font-size: 14px; }
+.feature span { font-size: 20px; }
+
+.login-right {
+  width: 420px; display: flex; align-items: center; justify-content: center;
+  padding: 40px 24px; background: var(--bg);
+}
+.login-card { width: 100%; }
+.login-card h2 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+.login-subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 28px; }
+
+.alert-error {
+  background: #7f1d1d33; border: 1px solid #991b1b; color: #f87171;
+  padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;
+}
+
+.login-btn { width: 100%; justify-content: center; padding: 12px; font-size: 15px; margin-top: 4px; }
+.btn-spinner {
+  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.demo-creds {
+  margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);
+}
+.demo-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.demo-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s;
+  &:hover { background: var(--surface-2); }
+}
+.demo-role { font-size: 11px; font-weight: 600; color: var(--accent); width: 70px; }
+.demo-user { font-size: 12px; font-family: monospace; flex: 1; }
+.demo-hint { font-size: 10px; color: var(--text-muted); }

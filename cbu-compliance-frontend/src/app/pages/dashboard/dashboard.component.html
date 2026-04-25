@@ -1,0 +1,144 @@
+<div class="page">
+  <div class="page-header flex-between">
+    <div>
+      <h1>Dashboard</h1>
+      <p>CBU Cybersecurity Compliance Overview</p>
+    </div>
+    <div class="flex gap-1">
+      <span class="last-updated text-muted">Last updated: {{lastUpdated | date:'HH:mm:ss'}}</span>
+      <button class="btn btn-outline btn-sm" (click)="load()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <ng-container *ngIf="!loading && stats">
+    <!-- Stat Cards -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#1e3a5f"><lucide-icon name="radio" [size]="22"></lucide-icon></div>
+        <div class="stat-body">
+          <div class="stat-value">{{stats.total_endpoints}}</div>
+          <div class="stat-label">Active Endpoints</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#14532d"><lucide-icon name="clipboard-list" [size]="22"></lucide-icon></div>
+        <div class="stat-body">
+          <div class="stat-value">{{stats.total_logs_today}}</div>
+          <div class="stat-label">Logs Today</div>
+        </div>
+      </div>
+      <div class="stat-card" [class.stat-card--warn]="stats.open_violations > 0">
+        <div class="stat-icon" style="background:#78350f"><lucide-icon name="triangle-alert" [size]="22"></lucide-icon></div>
+        <div class="stat-body">
+          <div class="stat-value">{{stats.open_violations}}</div>
+          <div class="stat-label">Open Violations</div>
+        </div>
+      </div>
+      <div class="stat-card" [class.stat-card--danger]="stats.critical_violations > 0">
+        <div class="stat-icon" style="background:#4c1d95"><lucide-icon name="siren" [size]="22"></lucide-icon></div>
+        <div class="stat-body">
+          <div class="stat-value">{{stats.critical_violations}}</div>
+          <div class="stat-label">Critical Violations</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#1e3a5f"><lucide-icon name="bell" [size]="22"></lucide-icon></div>
+        <div class="stat-body">
+          <div class="stat-value">{{stats.unread_alerts}}</div>
+          <div class="stat-label">Unread Alerts</div>
+        </div>
+      </div>
+      <div class="stat-card" [class.stat-card--success]="stats.compliance_rate >= 90">
+        <div class="stat-icon" style="background:#14532d"><lucide-icon name="circle-check" [size]="22"></lucide-icon></div>
+        <div class="stat-body">
+          <div class="stat-value">{{stats.compliance_rate}}%</div>
+          <div class="stat-label">Compliance Rate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <div class="card">
+        <h3 class="card-title">Violations by Severity</h3>
+        <div class="chart-wrap" *ngIf="severityChartData.labels.length > 0; else noData">
+          <canvas id="severityChart"></canvas>
+        </div>
+        <ng-template #noData>
+          <div class="empty-state"><div class="icon"><lucide-icon name="party-popper" [size]="32"></lucide-icon></div><p>No open violations</p></div>
+        </ng-template>
+      </div>
+      <div class="card">
+        <h3 class="card-title">Violations by Status</h3>
+        <div class="chart-wrap" *ngIf="statusChartData.labels.length > 0; else noData2">
+          <canvas id="statusChart"></canvas>
+        </div>
+        <ng-template #noData2>
+          <div class="empty-state"><div class="icon"><lucide-icon name="party-popper" [size]="32"></lucide-icon></div><p>No open violations</p></div>
+        </ng-template>
+      </div>
+      <div class="card compliance-gauge">
+        <h3 class="card-title">Compliance Rate</h3>
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 120 80" class="gauge-svg">
+            <path d="M10,70 A50,50 0 0,1 110,70" fill="none" stroke="#1e293b" stroke-width="12" stroke-linecap="round"/>
+            <path d="M10,70 A50,50 0 0,1 110,70" fill="none"
+                  [attr.stroke]="gaugeColor"
+                  stroke-width="12" stroke-linecap="round"
+                  stroke-dasharray="157"
+                  [attr.stroke-dashoffset]="157 - (stats.compliance_rate / 100 * 157)"/>
+          </svg>
+          <div class="gauge-value" [style.color]="gaugeColor">{{stats.compliance_rate}}%</div>
+          <div class="gauge-label text-muted">Past 7 days</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Tables -->
+    <div class="tables-row">
+      <div class="card">
+        <div class="flex-between mb-2">
+          <h3 class="card-title">Recent Violations</h3>
+          <a routerLink="/violations" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Endpoint</th><th>Description</th><th>Severity</th><th>Status</th><th>Time</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let v of stats.recent_violations">
+                <td><code class="ep">{{v.endpoint_id}}</code></td>
+                <td class="desc-cell">{{v.description}}</td>
+                <td><span class="badge badge-{{v.severity}}">{{v.severity}}</span></td>
+                <td><span class="badge badge-{{v.status}}">{{v.status | titlecase}}</span></td>
+                <td class="text-muted">{{v.detected_at | date:'MM/dd HH:mm'}}</td>
+              </tr>
+              <tr *ngIf="stats.recent_violations.length === 0">
+                <td colspan="5" class="text-muted" style="text-align:center;padding:20px">No recent violations</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex-between mb-2">
+          <h3 class="card-title">Recent Alerts</h3>
+          <a routerLink="/alerts" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div class="alerts-list">
+          <div class="alert-item" *ngFor="let a of stats.recent_alerts" [class.unread]="!a.is_read">
+            <div class="alert-dot dot-{{a.severity}}"></div>
+            <div class="alert-body">
+              <div class="alert-title">{{a.title}}</div>
+              <div class="alert-msg text-muted">{{a.message}}</div>
+            </div>
+            <div class="alert-time text-muted">{{a.created_at | date:'HH:mm'}}</div>
+          </div>
+          <div *ngIf="stats.recent_alerts.length === 0" class="text-muted" style="padding:20px;text-align:center">No recent alerts</div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

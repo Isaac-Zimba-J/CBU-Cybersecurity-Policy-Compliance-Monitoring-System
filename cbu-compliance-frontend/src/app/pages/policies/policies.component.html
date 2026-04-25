@@ -1,0 +1,139 @@
+<div class="page">
+  <div class="page-header flex-between">
+    <div><h1>Policies</h1><p>Cybersecurity compliance policies and rules</p></div>
+    <button *ngIf="canEdit" class="btn btn-primary" (click)="openCreate()">+ New Policy</button>
+  </div>
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <div class="policies-grid" *ngIf="!loading">
+    <div class="policy-card card" *ngFor="let p of policies">
+      <div class="policy-header">
+        <div>
+          <div class="policy-name">{{p.name}}</div>
+          <div class="policy-meta text-muted">v{{p.version}} · {{p.rules.length}} rule{{p.rules.length !== 1 ? 's' : ''}}</div>
+        </div>
+        <div class="flex gap-1">
+          <span class="badge" [class.badge-low]="p.is_active" [class.badge-false_positive]="!p.is_active">
+            {{p.is_active ? 'Active' : 'Inactive'}}
+          </span>
+          <button *ngIf="canEdit" class="btn btn-outline btn-sm" (click)="openPolicy(p)">Manage</button>
+        </div>
+      </div>
+      <p class="policy-desc text-muted">{{p.description || 'No description provided.'}}</p>
+
+      <div class="rules-list">
+        <div class="rule-item" *ngFor="let r of p.rules">
+          <div class="rule-left">
+            <span class="badge badge-{{r.severity}}">{{r.severity}}</span>
+            <span class="rule-name">{{r.name}}</span>
+          </div>
+          <div class="rule-type text-muted">{{r.rule_type | titlecase}}</div>
+        </div>
+        <div *ngIf="p.rules.length === 0" class="text-muted" style="font-size:12px;padding:8px 0">No rules defined yet.</div>
+      </div>
+    </div>
+
+    <div *ngIf="policies.length === 0" class="empty-state card">
+      <div class="icon"><lucide-icon name="scroll-text" [size]="32"></lucide-icon></div><p>No policies yet</p>
+    </div>
+  </div>
+</div>
+
+<!-- Create Policy Modal -->
+<div class="modal-backdrop" *ngIf="showCreate" (click)="closeCreate()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>New Policy</h2>
+      <button class="btn btn-outline btn-sm" (click)="closeCreate()"><lucide-icon name="x" [size]="14"></lucide-icon></button>
+    </div>
+    <div class="form-group">
+      <label>Policy Name *</label>
+      <input class="form-control" [(ngModel)]="createForm.name" placeholder="e.g. Acceptable Use Policy"/>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea class="form-control" [(ngModel)]="createForm.description" placeholder="What does this policy govern?"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Version</label>
+      <input class="form-control" [(ngModel)]="createForm.version" placeholder="1.0"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeCreate()">Cancel</button>
+      <button class="btn btn-primary" (click)="createPolicy()" [disabled]="saving">{{saving ? 'Creating...' : 'Create'}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Policy Modal -->
+<div class="modal-backdrop" *ngIf="selectedPolicy" (click)="closePolicy()">
+  <div class="modal modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{selectedPolicy.name}}</h2>
+      <button class="btn btn-outline btn-sm" (click)="closePolicy()"><lucide-icon name="x" [size]="14"></lucide-icon></button>
+    </div>
+
+    <div class="flex-between mb-2">
+      <span class="text-muted" style="font-size:13px">Rules</span>
+      <button class="btn btn-primary btn-sm" (click)="showAddRule = true">+ Add Rule</button>
+    </div>
+
+    <div class="rules-manage">
+      <div class="rule-manage-item" *ngFor="let r of selectedPolicy.rules">
+        <div>
+          <div class="flex gap-1 mb-1">
+            <span class="badge badge-{{r.severity}}">{{r.severity}}</span>
+            <strong style="font-size:13px">{{r.name}}</strong>
+          </div>
+          <div class="text-muted" style="font-size:12px">{{r.rule_type}} · {{r.description}}</div>
+          <code class="condition-code">{{r.condition}}</code>
+        </div>
+        <button class="btn btn-danger btn-sm" (click)="deleteRule(r)">Delete</button>
+      </div>
+      <div *ngIf="selectedPolicy.rules.length === 0" class="text-muted" style="padding:16px;text-align:center;font-size:13px">No rules yet. Add one above.</div>
+    </div>
+
+    <!-- Add Rule Inline -->
+    <div class="add-rule-form" *ngIf="showAddRule">
+      <h4 style="margin-bottom:12px;font-size:14px">New Rule</h4>
+      <div class="form-group">
+        <label>Rule Name *</label>
+        <input class="form-control" [(ngModel)]="ruleForm.name" placeholder="e.g. Login Outside Hours"/>
+      </div>
+      <div class="form-group">
+        <label>Rule Type *</label>
+        <select class="form-control" [(ngModel)]="ruleForm.rule_type" (change)="prefillCondition()">
+          <option value="login_time">login_time</option>
+          <option value="usb_device">usb_device</option>
+          <option value="network_access">network_access</option>
+          <option value="failed_logins">failed_logins</option>
+          <option value="process_execution">process_execution</option>
+          <option value="data_transfer">data_transfer</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Severity</label>
+        <select class="form-control" [(ngModel)]="ruleForm.severity">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Condition (JSON) *</label>
+        <textarea class="form-control" [(ngModel)]="ruleForm.condition" rows="3" style="font-family:monospace;font-size:12px"></textarea>
+      </div>
+      <div class="flex gap-1">
+        <button class="btn btn-outline btn-sm" (click)="showAddRule = false">Cancel</button>
+        <button class="btn btn-primary btn-sm" (click)="addRule()" [disabled]="saving">{{saving ? 'Adding...' : 'Add Rule'}}</button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" (click)="deactivatePolicy()">Deactivate Policy</button>
+      <button class="btn btn-outline" (click)="closePolicy()">Close</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,15 @@
+.filters { padding: 16px 20px; }
+.filters-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.filters-row .form-group { margin-bottom: 0; }
+.desc-cell { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.ep { font-size: 11px; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+
+.detail-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.detail-row {
+  display: flex; align-items: center; gap: 12px;
+  span:first-child { width: 90px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; flex-shrink: 0; }
+}
+.detail-desc {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px; font-size: 13px; line-height: 1.5;
+}

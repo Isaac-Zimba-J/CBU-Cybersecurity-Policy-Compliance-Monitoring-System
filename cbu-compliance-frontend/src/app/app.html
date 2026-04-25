@@ -1,0 +1,13 @@
+<div class="app-shell">
+  @if (showSidebar) { <app-sidebar></app-sidebar> }
+  <div class="content-area" [class.with-sidebar]="showSidebar">
+    @if (showSidebar) {
+      <div class="topbar">
+        <span class="topbar-title">CBU Cybersecurity Compliance Monitoring</span>
+      </div>
+    }
+    <main class="main-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

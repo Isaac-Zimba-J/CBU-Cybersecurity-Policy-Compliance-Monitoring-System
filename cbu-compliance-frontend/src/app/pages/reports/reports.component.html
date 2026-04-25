@@ -1,0 +1,111 @@
+<div class="page">
+  <div class="page-header flex-between">
+    <div><h1>Reports</h1><p>Compliance reports and summaries</p></div>
+    <button class="btn btn-primary" (click)="showGenerate=true">+ Generate Report</button>
+  </div>
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <div class="reports-layout" *ngIf="!loading">
+    <div class="reports-list">
+      <div class="report-item card" *ngFor="let r of reports"
+           [class.active]="selected?.id === r.id"
+           (click)="selectReport(r)">
+        <div class="report-icon">
+          <lucide-icon *ngIf="r.report_type === 'weekly'" name="calendar-days" [size]="20"></lucide-icon>
+          <lucide-icon *ngIf="r.report_type === 'monthly'" name="calendar" [size]="20"></lucide-icon>
+          <lucide-icon *ngIf="r.report_type !== 'weekly' && r.report_type !== 'monthly'" name="clipboard-list" [size]="20"></lucide-icon>
+        </div>
+        <div class="report-body">
+          <div class="report-title">{{r.title}}</div>
+          <div class="report-meta text-muted">{{r.created_at | date:'dd/MM/yyyy HH:mm'}}</div>
+        </div>
+        <span class="badge badge-low" style="align-self:flex-start">{{r.report_type}}</span>
+      </div>
+      <div *ngIf="reports.length===0" class="empty-state"><div class="icon"><lucide-icon name="trending-up" [size]="32"></lucide-icon></div><p>No reports yet</p></div>
+    </div>
+
+    <div class="report-detail card" *ngIf="selected && parsedContent">
+      <h3 style="margin-bottom:16px">{{selected.title}}</h3>
+      <div class="period-info text-muted mb-2">
+        Period: {{selected.period_start | date:'dd/MM/yyyy'}} — {{selected.period_end | date:'dd/MM/yyyy'}}
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric">
+          <div class="metric-value">{{parsedContent.total_activity_logs}}</div>
+          <div class="metric-label">Total Activity Logs</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value">{{parsedContent.total_violations}}</div>
+          <div class="metric-label">Total Violations</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value text-success">{{parsedContent.resolved_violations}}</div>
+          <div class="metric-label">Resolved</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value text-danger">{{parsedContent.open_violations}}</div>
+          <div class="metric-label">Open</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" [class.text-success]="parsedContent.compliance_rate_percent >= 90"
+                                    [class.text-warning]="parsedContent.compliance_rate_percent < 90 && parsedContent.compliance_rate_percent >= 70"
+                                    [class.text-danger]="parsedContent.compliance_rate_percent < 70">
+            {{parsedContent.compliance_rate_percent}}%
+          </div>
+          <div class="metric-label">Compliance Rate</div>
+        </div>
+      </div>
+
+      <div class="section-title">Violations by Severity</div>
+      <div class="sev-bars">
+        <div class="sev-row" *ngFor="let entry of severityEntries">
+          <span class="badge badge-{{entry.key}}">{{entry.key}}</span>
+          <div class="sev-track">
+            <div class="sev-fill sev-fill-{{entry.key}}" [style.width.%]="getPercent(entry.value, parsedContent.total_violations)"></div>
+          </div>
+          <span class="sev-count">{{entry.value}}</span>
+        </div>
+      </div>
+
+      <div class="section-title mt-2">Top Violating Endpoints</div>
+      <div class="top-endpoints">
+        <div class="endpoint-row" *ngFor="let e of parsedContent.top_violating_endpoints">
+          <code class="ep">{{e.endpoint}}</code>
+          <div class="ep-track"><div class="ep-fill" [style.width.%]="getPercent(e.count, parsedContent.total_violations)"></div></div>
+          <span class="text-muted" style="font-size:12px">{{e.count}}</span>
+        </div>
+        <div *ngIf="parsedContent.top_violating_endpoints.length===0" class="text-muted" style="font-size:13px;padding:8px">None detected</div>
+      </div>
+    </div>
+
+    <div class="card report-detail empty-state" *ngIf="!selected">
+      <div class="icon"><lucide-icon name="clipboard-list" [size]="32"></lucide-icon></div><p>Select a report to view details</p>
+    </div>
+  </div>
+</div>
+
+<!-- Generate Modal -->
+<div class="modal-backdrop" *ngIf="showGenerate" (click)="showGenerate=false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Generate Report</h2>
+      <button class="btn btn-outline btn-sm" (click)="showGenerate=false"><lucide-icon name="x" [size]="14"></lucide-icon></button>
+    </div>
+    <div class="form-group">
+      <label>Report Type</label>
+      <select class="form-control" [(ngModel)]="genForm.report_type">
+        <option value="weekly">Weekly (last 7 days)</option>
+        <option value="monthly">Monthly (last 30 days)</option>
+        <option value="on_demand">On Demand</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="showGenerate=false">Cancel</button>
+      <button class="btn btn-primary" (click)="generate()" [disabled]="generating">
+        {{generating ? 'Generating...' : 'Generate'}}
+      </button>
+    </div>
+  </div>
+</div>

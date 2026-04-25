@@ -1,0 +1,78 @@
+<div class="page">
+  <div class="page-header flex-between">
+    <div><h1>Activity Logs</h1><p>Raw endpoint activity collected by monitoring agents</p></div>
+    <button class="btn btn-outline btn-sm" (click)="load()">↻ Refresh</button>
+  </div>
+
+  <!-- Endpoints summary -->
+  <div class="endpoints-row mb-2" *ngIf="endpoints.length > 0">
+    <div class="endpoint-chip" *ngFor="let e of endpoints"
+         [class.active]="filters.endpoint_id === e.endpoint_id"
+         (click)="filterByEndpoint(e.endpoint_id)">
+      <span class="ep-dot"></span>
+      <span>{{e.endpoint_id}}</span>
+      <span class="ep-count">{{e.log_count}}</span>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card filters mb-2">
+    <div class="filters-row">
+      <div class="form-group">
+        <label>Event Type</label>
+        <select class="form-control" [(ngModel)]="filters.event_type" (change)="load()">
+          <option value="">All</option>
+          <option value="login">Login</option>
+          <option value="logout">Logout</option>
+          <option value="login_failed">Failed Login</option>
+          <option value="network_connection">Network Connection</option>
+          <option value="usb_connected">USB Connected</option>
+          <option value="file_transfer">File Transfer</option>
+          <option value="process_started">Process Started</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input class="form-control" [(ngModel)]="filters.username" (input)="onUsernameInput()" placeholder="Filter by user"/>
+      </div>
+      <div class="form-group">
+        <label>Time Range</label>
+        <select class="form-control" [(ngModel)]="filters.hours" (change)="load()">
+          <option [ngValue]="6">Last 6 hours</option>
+          <option [ngValue]="24">Last 24 hours</option>
+          <option [ngValue]="72">Last 3 days</option>
+          <option [ngValue]="168">Last 7 days</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <div class="card" *ngIf="!loading">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Time</th><th>Endpoint</th><th>IP</th><th>User</th><th>Event</th><th>Data</th><th>Processed</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of logs">
+            <td style="font-size:11px;white-space:nowrap">{{l.timestamp | date:'dd/MM HH:mm:ss'}}</td>
+            <td><code class="ep">{{l.endpoint_id}}</code></td>
+            <td class="text-muted" style="font-size:11px">{{l.endpoint_ip || '—'}}</td>
+            <td>{{l.username}}</td>
+            <td><span class="event-badge event-{{l.event_type}}">{{l.event_type}}</span></td>
+            <td class="data-cell text-muted">{{l.event_data | jsonPreview}}</td>
+            <td><span [class]="l.processed ? 'text-success' : 'text-warning'">
+              <lucide-icon *ngIf="l.processed" name="check" [size]="14"></lucide-icon>
+              <lucide-icon *ngIf="!l.processed" name="clock" [size]="14"></lucide-icon>
+            </span></td>
+          </tr>
+          <tr *ngIf="logs.length === 0">
+            <td colspan="7"><div class="empty-state"><div class="icon"><lucide-icon name="clipboard-list" [size]="32"></lucide-icon></div><p>No logs found</p></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

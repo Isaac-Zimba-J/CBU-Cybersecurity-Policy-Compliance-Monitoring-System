@@ -1,0 +1,81 @@
+<div class="page">
+  <div class="page-header flex-between">
+    <div><h1>Users</h1><p>Manage system accounts</p></div>
+    <button class="btn btn-primary" (click)="showCreate=true">+ New User</button>
+  </div>
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <div class="card" *ngIf="!loading">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let u of users">
+            <td>{{u.full_name || '—'}}</td>
+            <td><code style="font-size:12px">{{u.username}}</code></td>
+            <td class="text-muted" style="font-size:12px">{{u.email}}</td>
+            <td><span class="badge" [ngClass]="roleBadge(u.role)">{{u.role | titlecase}}</span></td>
+            <td><span [class]="u.is_active ? 'text-success' : 'text-danger'">{{u.is_active ? 'Active' : 'Disabled'}}</span></td>
+            <td class="text-muted" style="font-size:11px">{{u.last_login ? (u.last_login | date:'dd/MM HH:mm') : 'Never'}}</td>
+            <td>
+              <div class="flex gap-1">
+                <button class="btn btn-outline btn-sm" (click)="editUser(u)">Edit</button>
+                <button class="btn btn-danger btn-sm" (click)="deleteUser(u)" *ngIf="u.id !== currentUserId">Delete</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal-backdrop" *ngIf="showCreate" (click)="showCreate=false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header"><h2>New User</h2><button class="btn btn-outline btn-sm" (click)="showCreate=false"><lucide-icon name="x" [size]="14"></lucide-icon></button></div>
+    <div class="form-group"><label>Full Name</label><input class="form-control" [(ngModel)]="createForm.full_name" placeholder="e.g. John Mwale"/></div>
+    <div class="form-group"><label>Username *</label><input class="form-control" [(ngModel)]="createForm.username" placeholder="e.g. jmwale"/></div>
+    <div class="form-group"><label>Email *</label><input class="form-control" type="email" [(ngModel)]="createForm.email" placeholder="user@cbu.ac.zm"/></div>
+    <div class="form-group"><label>Password *</label><input class="form-control" type="password" [(ngModel)]="createForm.password" placeholder="Min 8 characters"/></div>
+    <div class="form-group">
+      <label>Role</label>
+      <select class="form-control" [(ngModel)]="createForm.role">
+        <option value="viewer">Viewer</option>
+        <option value="security_personnel">Security Personnel</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div *ngIf="createError" class="alert-error mt-1">{{createError}}</div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="showCreate=false">Cancel</button>
+      <button class="btn btn-primary" (click)="createUser()" [disabled]="saving">{{saving ? 'Creating...' : 'Create User'}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-backdrop" *ngIf="editTarget" (click)="editTarget=null">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header"><h2>Edit {{editTarget.username}}</h2><button class="btn btn-outline btn-sm" (click)="editTarget=null"><lucide-icon name="x" [size]="14"></lucide-icon></button></div>
+    <div class="form-group"><label>Full Name</label><input class="form-control" [(ngModel)]="editForm.full_name"/></div>
+    <div class="form-group"><label>Role</label>
+      <select class="form-control" [(ngModel)]="editForm.role">
+        <option value="viewer">Viewer</option>
+        <option value="security_personnel">Security Personnel</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Status</label>
+      <select class="form-control" [(ngModel)]="editForm.is_active">
+        <option [ngValue]="true">Active</option>
+        <option [ngValue]="false">Disabled</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="editTarget=null">Cancel</button>
+      <button class="btn btn-primary" (click)="saveEdit()" [disabled]="saving">{{saving ? 'Saving...' : 'Save'}}</button>
+    </div>
+  </div>
+</div>

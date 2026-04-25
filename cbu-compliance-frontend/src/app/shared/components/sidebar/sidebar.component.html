@@ -1,0 +1,51 @@
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon"><lucide-icon name="shield" [size]="28"></lucide-icon></div>
+    <div class="logo-text">
+      <span class="logo-title">CBU CSMS</span>
+      <span class="logo-sub">Compliance Monitor</span>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <span class="nav-label">Main</span>
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+      <span class="nav-icon"></span> Dashboard
+    </a>
+    <a routerLink="/violations" routerLinkActive="active" class="nav-item">
+      <span class="nav-icon"></span> Violations
+      <span class="nav-badge" *ngIf="openViolations > 0">{{openViolations}}</span>
+    </a>
+    <a routerLink="/alerts" routerLinkActive="active" class="nav-item">
+      <span class="nav-icon"><lucide-icon name="bell" [size]="16"></lucide-icon></span> Alerts
+      <span class="nav-badge" *ngIf="unreadAlerts > 0">{{unreadAlerts}}</span>
+    </a>
+    <a routerLink="/logs" routerLinkActive="active" class="nav-item">
+      <span class="nav-icon"><lucide-icon name="clipboard-list" [size]="16"></lucide-icon></span> Activity Logs
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <span class="nav-label">Management</span>
+    <a routerLink="/policies" routerLinkActive="active" class="nav-item">
+      <span class="nav-icon"><lucide-icon name="scroll-text" [size]="16"></lucide-icon></span> Policies
+    </a>
+    <a routerLink="/reports" routerLinkActive="active" class="nav-item">
+      <span class="nav-icon"><lucide-icon name="trending-up" [size]="16"></lucide-icon></span> Reports
+    </a>
+    <a *ngIf="isAdmin" routerLink="/users" routerLinkActive="active" class="nav-item">
+      <span class="nav-icon"><lucide-icon name="users" [size]="16"></lucide-icon></span> Users
+    </a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar">{{initials}}</div>
+      <div class="user-details">
+        <span class="user-name">{{currentUser?.full_name || currentUser?.username}}</span>
+        <span class="user-role">{{currentUser?.role | titlecase}}</span>
+      </div>
+    </div>
+    <button class="logout-btn" (click)="logout()"><lucide-icon name="log-out" [size]="16"></lucide-icon></button>
+  </div>
+</nav>

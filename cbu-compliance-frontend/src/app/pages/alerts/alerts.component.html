@@ -1,0 +1,46 @@
+<div class="page">
+  <div class="page-header flex-between">
+    <div><h1>Alerts</h1><p>System-generated policy violation alerts</p></div>
+    <div class="flex gap-1">
+      <button class="btn btn-outline btn-sm" (click)="markAllRead()">Mark All Read</button>
+      <button class="btn btn-outline btn-sm" (click)="load()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="filter-tabs mb-2">
+    <button class="tab-btn" [class.active]="!unreadOnly" (click)="unreadOnly=false;load()">All ({{total}})</button>
+    <button class="tab-btn" [class.active]="unreadOnly"  (click)="unreadOnly=true;load()">Unread ({{unread}})</button>
+  </div>
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <div class="alerts-feed" *ngIf="!loading">
+    <div class="alert-card card" *ngFor="let a of alerts"
+         [class.unread]="!a.is_read"
+         (click)="markRead(a)">
+      <div class="alert-left">
+        <div class="sev-bar sev-{{a.severity}}"></div>
+        <div class="alert-icon">
+          <lucide-icon *ngIf="a.severity==='critical'" name="siren" [size]="20"></lucide-icon>
+          <lucide-icon *ngIf="a.severity==='high'" name="triangle-alert" [size]="20"></lucide-icon>
+          <lucide-icon *ngIf="a.severity==='medium'" name="bell" [size]="20"></lucide-icon>
+          <lucide-icon *ngIf="a.severity==='low'" name="info" [size]="20"></lucide-icon>
+        </div>
+      </div>
+      <div class="alert-content">
+        <div class="alert-row">
+          <span class="alert-title">{{a.title}}</span>
+          <span class="badge badge-{{a.severity}}">{{a.severity}}</span>
+          <span class="unread-dot" *ngIf="!a.is_read"></span>
+        </div>
+        <div class="alert-msg text-muted">{{a.message}}</div>
+        <div class="alert-time text-muted">{{a.created_at | date:'dd/MM/yyyy HH:mm'}}</div>
+      </div>
+    </div>
+
+    <div *ngIf="alerts.length === 0" class="empty-state card">
+      <div class="icon"><lucide-icon name="bell-off" [size]="32"></lucide-icon></div>
+      <p>{{unreadOnly ? 'No unread alerts' : 'No alerts found'}}</p>
+    </div>
+  </div>
+</div>

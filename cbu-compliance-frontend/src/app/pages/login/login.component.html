@@ -1,0 +1,51 @@
+<div class="login-page">
+  <div class="login-left">
+    <div class="brand">
+      <h1>CBU Cybersecurity<br>Compliance Monitor</h1>
+      <p>Copperbelt University — Directorate of ICT</p>
+    </div>
+    <div class="features">
+      <div class="feature">Real-time endpoint monitoring</div>
+      <div class="feature">Instant policy violation detection</div>
+      <div class="feature">Compliance reporting & analytics</div>
+      <div class="feature">Role-based access control</div>
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-card">
+      <h2>Sign In</h2>
+      <p class="login-subtitle">Enter your DICT credentials to continue</p>
+
+      <div *ngIf="error" class="alert-error">
+        {{error}}
+      </div>
+
+      <form (ngSubmit)="onSubmit()">
+        <div class="form-group">
+          <label>Username</label>
+          <input class="form-control" type="text" [(ngModel)]="username"
+                 name="username" placeholder="e.g. bwembya.rm" required autocomplete="username"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input class="form-control" type="password" [(ngModel)]="password"
+                 name="password" placeholder="••••••••" required autocomplete="current-password"/>
+        </div>
+        <button class="btn btn-primary login-btn" type="submit" [disabled]="loading">
+          <span *ngIf="loading" class="btn-spinner"></span>
+          {{loading ? 'Signing in...' : 'Sign In'}}
+        </button>
+      </form>
+
+      <div class="demo-creds">
+        <p class="demo-title">Demo Accounts</p>
+        <div class="demo-row" *ngFor="let d of demoAccounts" (click)="fillDemo(d)">
+          <span class="demo-role">{{d.role}}</span>
+          <span class="demo-user">{{d.username}}</span>
+          <span class="demo-hint">click to fill</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

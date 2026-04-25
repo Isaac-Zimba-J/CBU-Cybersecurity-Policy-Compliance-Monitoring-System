@@ -1,0 +1,28 @@
+.filter-tabs { display: flex; gap: 4px; }
+.tab-btn {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-muted); padding: 7px 16px; font-size: 13px; cursor: pointer; transition: all 0.15s;
+  &.active, &:hover { border-color: var(--accent); color: var(--accent); }
+}
+.alerts-feed { display: flex; flex-direction: column; gap: 10px; }
+.alert-card {
+  display: flex; align-items: flex-start; gap: 0; padding: 0; overflow: hidden; cursor: pointer;
+  transition: border-color 0.15s;
+  &.unread { border-color: var(--accent); }
+  &:hover { border-color: var(--primary-light); }
+}
+.alert-left { display: flex; align-items: stretch; }
+.sev-bar {
+  width: 4px;
+  &.sev-low      { background: #4ade80; }
+  &.sev-medium   { background: #fbbf24; }
+  &.sev-high     { background: #f87171; }
+  &.sev-critical { background: #c084fc; }
+}
+.alert-icon { padding: 16px 12px; font-size: 20px; }
+.alert-content { flex: 1; padding: 14px 16px 14px 0; }
+.alert-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.alert-title { font-size: 13px; font-weight: 600; flex: 1; }
+.unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.alert-msg { font-size: 12px; margin-bottom: 6px; }
+.alert-time { font-size: 11px; }

@@ -1,0 +1,32 @@
+.policies-grid { display: flex; flex-direction: column; gap: 16px; }
+.policy-card { }
+.policy-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.policy-name { font-size: 16px; font-weight: 600; }
+.policy-meta { font-size: 12px; margin-top: 2px; }
+.policy-desc { font-size: 13px; margin-bottom: 14px; }
+
+.rules-list { display: flex; flex-direction: column; gap: 6px; }
+.rule-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface-2); border-radius: 8px; padding: 8px 12px;
+}
+.rule-left { display: flex; align-items: center; gap: 8px; }
+.rule-name { font-size: 12px; font-weight: 500; }
+.rule-type { font-size: 11px; }
+
+.rules-manage { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 300px; overflow-y: auto; }
+.rule-manage-item {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+}
+.condition-code {
+  display: block; font-family: monospace; font-size: 10px; color: var(--text-muted);
+  margin-top: 6px; word-break: break-all;
+}
+
+.add-rule-form {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; margin-bottom: 16px;
+}
+
+.modal-lg { min-width: 540px; max-width: 620px; }

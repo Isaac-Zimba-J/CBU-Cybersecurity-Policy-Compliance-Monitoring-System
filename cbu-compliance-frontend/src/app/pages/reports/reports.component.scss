@@ -1,0 +1,33 @@
+.reports-layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
+.reports-list { display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow-y: auto; }
+.report-item {
+  display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: border-color 0.15s; padding: 14px 16px;
+  &:hover { border-color: var(--primary-light); }
+  &.active { border-color: var(--accent); }
+}
+.report-icon { font-size: 24px; flex-shrink: 0; }
+.report-body { flex: 1; min-width: 0; }
+.report-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.report-meta  { font-size: 11px; margin-top: 3px; }
+
+.report-detail { height: fit-content; }
+.metrics-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 24px; }
+.metric { background: var(--surface-2); border-radius: 8px; padding: 12px; text-align: center; }
+.metric-value { font-size: 24px; font-weight: 700; }
+.metric-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
+.section-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+
+.sev-bars, .top-endpoints { display: flex; flex-direction: column; gap: 8px; }
+.sev-row, .endpoint-row { display: flex; align-items: center; gap: 10px; }
+.sev-track, .ep-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.sev-fill {
+  height: 100%; border-radius: 4px; transition: width 0.4s;
+  &.sev-fill-low      { background: #4ade80; }
+  &.sev-fill-medium   { background: #fbbf24; }
+  &.sev-fill-high     { background: #f87171; }
+  &.sev-fill-critical { background: #c084fc; }
+}
+.ep-fill { height: 100%; background: var(--primary-light); border-radius: 4px; transition: width 0.4s; }
+.sev-count { font-size: 12px; width: 24px; text-align: right; }
+.ep { font-size: 11px; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; font-family: monospace; white-space: nowrap; }
+.period-info { font-size: 12px; }

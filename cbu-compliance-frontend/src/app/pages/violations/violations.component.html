@@ -1,0 +1,127 @@
+<div class="page">
+  <div class="page-header flex-between">
+    <div><h1>Violations</h1><p>Detected policy violations across all endpoints</p></div>
+    <button class="btn btn-outline btn-sm" (click)="load()">↻ Refresh</button>
+  </div>
+
+  <!-- Filters -->
+  <div class="card filters mb-2">
+    <div class="filters-row">
+      <div class="form-group">
+        <label>Severity</label>
+        <select class="form-control" [(ngModel)]="filters.severity" (change)="load()">
+          <option value="">All</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select class="form-control" [(ngModel)]="filters.status" (change)="load()">
+          <option value="">All</option>
+          <option value="detected">Detected</option>
+          <option value="pending_review">Pending Review</option>
+          <option value="under_investigation">Under Investigation</option>
+          <option value="escalated">Escalated</option>
+          <option value="resolved">Resolved</option>
+          <option value="false_positive">False Positive</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Endpoint</label>
+        <input class="form-control" type="text" [(ngModel)]="filters.endpoint_id" (input)="onEndpointInput()" placeholder="e.g. DICT-PC-001"/>
+      </div>
+      <div class="form-group">
+        <label>Time Range</label>
+        <select class="form-control" [(ngModel)]="filters.hours" (change)="load()">
+          <option [ngValue]="24">Last 24 hours</option>
+          <option [ngValue]="168">Last 7 days</option>
+          <option [ngValue]="720">Last 30 days</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <div class="card" *ngIf="!loading">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Endpoint</th><th>User</th><th>Description</th>
+            <th>Severity</th><th>Status</th><th>Detected</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of violations">
+            <td class="text-muted" style="font-size:11px">{{v.id}}</td>
+            <td><code class="ep">{{v.endpoint_id}}</code></td>
+            <td>{{v.username || '—'}}</td>
+            <td class="desc-cell">{{v.description}}</td>
+            <td><span class="badge badge-{{v.severity}}">{{v.severity}}</span></td>
+            <td><span class="badge badge-{{v.status}}">{{v.status | titlecase}}</span></td>
+            <td class="text-muted" style="font-size:11px">{{v.detected_at | date:'dd/MM HH:mm'}}</td>
+            <td>
+              <button class="btn btn-outline btn-sm" (click)="openDetail(v)">Manage</button>
+            </td>
+          </tr>
+          <tr *ngIf="violations.length === 0">
+            <td colspan="8">
+              <div class="empty-state"><div class="icon"><lucide-icon name="party-popper" [size]="32"></lucide-icon></div><p>No violations found</p></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-backdrop" *ngIf="selected" (click)="closeDetail()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Violation #{{selected.id}}</h2>
+      <button class="btn btn-outline btn-sm" (click)="closeDetail()"><lucide-icon name="x" [size]="14"></lucide-icon></button>
+    </div>
+
+    <div class="detail-grid">
+      <div class="detail-row"><span>Endpoint</span><code>{{selected.endpoint_id}}</code></div>
+      <div class="detail-row"><span>User</span><span>{{selected.username || '—'}}</span></div>
+      <div class="detail-row"><span>Severity</span><span class="badge badge-{{selected.severity}}">{{selected.severity}}</span></div>
+      <div class="detail-row"><span>Status</span><span class="badge badge-{{selected.status}}">{{selected.status | titlecase}}</span></div>
+      <div class="detail-row"><span>Detected</span><span>{{selected.detected_at | date:'dd/MM/yyyy HH:mm'}}</span></div>
+      <div class="detail-row" *ngIf="selected.resolved_at"><span>Resolved</span><span>{{selected.resolved_at | date:'dd/MM/yyyy HH:mm'}}</span></div>
+    </div>
+
+    <div class="form-group mt-2">
+      <label>Description</label>
+      <div class="detail-desc">{{selected.description}}</div>
+    </div>
+
+    <div class="form-group">
+      <label>Update Status</label>
+      <select class="form-control" [(ngModel)]="updateForm.status">
+        <option value="detected">Detected</option>
+        <option value="pending_review">Pending Review</option>
+        <option value="under_investigation">Under Investigation</option>
+        <option value="escalated">Escalated</option>
+        <option value="resolved">Resolved</option>
+        <option value="false_positive">False Positive</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea class="form-control" [(ngModel)]="updateForm.notes" placeholder="Add investigation notes..."></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeDetail()">Cancel</button>
+      <button class="btn btn-primary" (click)="saveViolation()" [disabled]="saving">
+        {{saving ? 'Saving...' : 'Save Changes'}}
+      </button>
+    </div>
+  </div>
+</div>
