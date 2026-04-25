@@ -55,8 +55,9 @@ export class ViolationsComponent implements OnInit, OnDestroy {
         if (i > -1) this.violations[i] = updated;
         this.saving = false;
         this.closeDetail();
+        this.cdr.detectChanges();
       },
-      error: () => { this.saving = false; }
+      error: () => { this.saving = false; this.cdr.detectChanges(); }
     });
   }
 }
