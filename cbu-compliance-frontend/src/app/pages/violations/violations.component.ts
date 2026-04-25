@@ -14,7 +14,7 @@ export class ViolationsComponent implements OnInit, OnDestroy {
   selected: Violation | null = null;
   saving = false;
 
-  filters = { severity: '', status: '', endpoint_id: '', hours: 168 };
+  filters = { severity: '', status: '', endpoint_id: '', hours: 720 };
   updateForm = { status: '', notes: '' };
   private filterDebounce: any;
 
