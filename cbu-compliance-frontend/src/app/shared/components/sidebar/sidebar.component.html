@@ -10,10 +10,10 @@
   <div class="nav-section">
     <span class="nav-label">Main</span>
     <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
-      <span class="nav-icon"></span> Dashboard
+      <span class="nav-icon"><lucide-icon name="shield" [size]="16"></lucide-icon></span> Dashboard
     </a>
     <a routerLink="/violations" routerLinkActive="active" class="nav-item">
-      <span class="nav-icon"></span> Violations
+      <span class="nav-icon"><lucide-icon name="triangle-alert" [size]="16"></lucide-icon></span> Violations
       <span class="nav-badge" *ngIf="openViolations > 0">{{openViolations}}</span>
     </a>
     <a routerLink="/alerts" routerLinkActive="active" class="nav-item">
