@@ -123,7 +123,7 @@ The agent will start collecting activity and sending it to the server every 10 s
 | PUT    | `/policies/{id}` | Update a policy |
 | POST   | `/policies/{id}/rules` | Add a rule to a policy |
 
-### Activity Logs
+### Activity Logss
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/logs/ingest` | Agent posts a single log |
