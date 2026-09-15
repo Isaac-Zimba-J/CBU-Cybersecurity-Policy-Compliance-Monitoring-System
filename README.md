@@ -169,7 +169,11 @@ pip install requests psutil
 python agent.py --server http://192.168.1.5:8000
 ```
 
-The agent will start collecting activity and sending it to the server every 10 seconds.
+The agent scans processes and network connections every second and sends a batch every 5 seconds. It watches for: new processes, outbound connections (including attempts), USB/removable drives being plugged in, files copied onto them, interactive logins, and failed OS logins. Whenever the server flags something the agent prints `🚩 VIOLATION FLAGGED …`.
+
+**To trigger real violations during a demo, and to edit the rules that detect them, see [TESTING_VIOLATIONS.md](TESTING_VIOLATIONS.md).**
+
+Fallback when a physical action isn't possible: `python agent.py --server http://192.168.1.5:8000 --simulate usb` (see `--list-simulations`).
 
 ---
 

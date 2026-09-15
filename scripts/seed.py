@@ -65,7 +65,7 @@ policies_data = [
                 "name": "Unauthorised USB Device",
                 "rule_type": "usb_device",
                 "description": "Removable media is not permitted without prior authorisation.",
-                "condition": json.dumps({"allowed": False}),
+                "condition": json.dumps({"allowed": False, "allowed_devices": []}),
                 "severity": SeverityLevel.HIGH,
             },
         ]

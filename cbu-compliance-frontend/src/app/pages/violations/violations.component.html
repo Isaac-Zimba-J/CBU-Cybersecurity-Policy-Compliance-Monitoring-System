@@ -1,7 +1,12 @@
 <div class="page">
   <div class="page-header flex-between">
     <div><h1>Violations</h1><p>Detected policy violations across all endpoints</p></div>
-    <button class="btn btn-outline btn-sm" (click)="load()">↻ Refresh</button>
+    <div class="flex gap-1">
+      <button class="btn btn-outline btn-sm live-toggle" [class.on]="live" (click)="toggleLive()" title="Auto-refresh every 5s">
+        <span class="live-dot"></span>{{live ? 'Live' : 'Paused'}}
+      </button>
+      <button class="btn btn-outline btn-sm" (click)="load()">↻ Refresh</button>
+    </div>
   </div>
 
   <!-- Filters -->
@@ -57,11 +62,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let v of violations">
+          <tr *ngFor="let v of violations" [class.fresh]="fresh.has(v.id)">
             <td class="text-muted" style="font-size:11px">{{v.id}}</td>
             <td><code class="ep">{{v.endpoint_id}}</code></td>
             <td>{{v.username || '—'}}</td>
-            <td class="desc-cell">{{v.description}}</td>
+            <td class="desc-cell"><span class="badge badge-new" *ngIf="fresh.has(v.id)">NEW</span> {{v.description}}</td>
             <td><span class="badge badge-{{v.severity}}">{{v.severity}}</span></td>
             <td><span class="badge badge-{{v.status}}">{{v.status | titlecase}}</span></td>
             <td class="text-muted" style="font-size:11px">{{v.detected_at | date:'dd/MM HH:mm'}}</td>

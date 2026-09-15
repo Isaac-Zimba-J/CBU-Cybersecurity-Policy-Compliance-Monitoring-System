@@ -53,6 +53,14 @@ class ComplianceRuleCreate(BaseModel):
     condition: str   # JSON string
     severity: SeverityLevel = SeverityLevel.MEDIUM
 
+class ComplianceRuleUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    rule_type: Optional[str] = None
+    condition: Optional[str] = None   # JSON string
+    severity: Optional[SeverityLevel] = None
+    is_active: Optional[bool] = None
+
 class ComplianceRuleOut(BaseModel):
     id: int
     policy_id: int

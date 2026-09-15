@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ApiService } from '../../core/services/api.service';
 import { DashboardStats } from '../../core/models/models';
 import { Chart, registerables } from 'chart.js';
@@ -10,12 +10,13 @@ Chart.register(...registerables);
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   stats: DashboardStats | null = null;
   loading = true;
   lastUpdated = new Date();
   private severityChart: Chart | null = null;
   private statusChart: Chart | null = null;
+  private pollId: any;
 
   severityChartData: { labels: string[], data: number[] } = { labels: [], data: [] };
   statusChartData:   { labels: string[], data: number[] } = { labels: [], data: [] };
@@ -31,10 +32,16 @@ export class DashboardComponent implements OnInit {
 
   constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+    // Live refresh so violations flagged by an agent show up without a manual reload
+    this.pollId = setInterval(() => this.load(true), 10000);
+  }
 
-  load(): void {
-    this.loading = true;
+  ngOnDestroy(): void { clearInterval(this.pollId); this.destroyCharts(); }
+
+  load(silent = false): void {
+    if (!silent) this.loading = true;
     this.destroyCharts();
     this.api.getDashboardStats().subscribe({
       next: s => {

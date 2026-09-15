@@ -4,7 +4,8 @@ from typing import List
 from app.core.database import get_db
 from app.core.security import get_current_user, require_role
 from app.models.user import User, UserRole, Policy, ComplianceRule
-from app.schemas.schemas import PolicyCreate, PolicyOut, PolicyUpdate, ComplianceRuleCreate, ComplianceRuleOut
+import json
+from app.schemas.schemas import PolicyCreate, PolicyOut, PolicyUpdate, ComplianceRuleCreate, ComplianceRuleUpdate, ComplianceRuleOut
 
 router = APIRouter(prefix="/policies", tags=["Policies"])
 
@@ -105,6 +106,34 @@ def add_rule(
         severity=rule_data.severity,
     )
     db.add(rule)
+    db.commit()
+    db.refresh(rule)
+    return rule
+
+
+@router.put("/{policy_id}/rules/{rule_id}", response_model=ComplianceRuleOut)
+def update_rule(
+    policy_id: int,
+    rule_id: int,
+    update_data: ComplianceRuleUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.SECURITY_PERSONNEL))
+):
+    """Edit a rule in place (thresholds, blocked lists, severity...). Takes effect on the next event."""
+    rule = db.query(ComplianceRule).filter(
+        ComplianceRule.id == rule_id,
+        ComplianceRule.policy_id == policy_id
+    ).first()
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    changes = update_data.model_dump(exclude_none=True)
+    if "condition" in changes:
+        try:
+            json.loads(changes["condition"])
+        except (json.JSONDecodeError, TypeError):
+            raise HTTPException(status_code=400, detail="condition must be valid JSON")
+    for field, value in changes.items():
+        setattr(rule, field, value)
     db.commit()
     db.refresh(rule)
     return rule

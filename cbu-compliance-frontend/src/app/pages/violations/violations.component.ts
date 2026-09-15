@@ -16,11 +16,22 @@ export class ViolationsComponent implements OnInit, OnDestroy {
 
   filters = { severity: '', status: '', endpoint_id: '', hours: 720 };
   updateForm = { status: '', notes: '' };
+  live = true;
+  /** ids of violations that appeared while this page was open — highlighted as NEW */
+  fresh = new Set<number>();
+  private maxSeenId = 0;
   private filterDebounce: any;
+  private pollId: any;
 
   constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
-  ngOnInit(): void { this.load(); }
-  ngOnDestroy(): void { if (this.filterDebounce) clearTimeout(this.filterDebounce); }
+  ngOnInit(): void {
+    this.load();
+    this.pollId = setInterval(() => { if (this.live && !this.selected) this.refresh(); }, 5000);
+  }
+  ngOnDestroy(): void {
+    if (this.filterDebounce) clearTimeout(this.filterDebounce);
+    clearInterval(this.pollId);
+  }
 
   onEndpointInput(): void {
     if (this.filterDebounce) clearTimeout(this.filterDebounce);
@@ -29,17 +40,31 @@ export class ViolationsComponent implements OnInit, OnDestroy {
 
   load(): void {
     this.loading = true;
+    this.refresh(true);
+  }
+
+  toggleLive(): void { this.live = !this.live; if (this.live) this.refresh(); }
+
+  /** Silent re-fetch with current filters; rows with an unseen id get the NEW highlight. */
+  refresh(initial = false): void {
     const params: any = { hours: this.filters.hours, limit: 100 };
     if (this.filters.severity)   params.severity    = this.filters.severity;
     if (this.filters.status)     params.status      = this.filters.status;
     if (this.filters.endpoint_id) params.endpoint_id = this.filters.endpoint_id;
     this.api.getViolations(params).subscribe({
-      next: v => { this.violations = v; this.loading = false; this.cdr.detectChanges(); },
+      next: v => {
+        if (!initial && this.maxSeenId > 0) {
+          v.filter(x => x.id > this.maxSeenId).forEach(x => this.fresh.add(x.id));
+        }
+        this.maxSeenId = Math.max(this.maxSeenId, ...v.map(x => x.id));
+        this.violations = v; this.loading = false; this.cdr.detectChanges();
+      },
       error: () => { this.loading = false; this.cdr.detectChanges(); }
     });
   }
 
   openDetail(v: Violation): void {
+    this.fresh.delete(v.id);
     this.selected = v;
     this.updateForm = { status: v.status, notes: v.notes || '' };
   }

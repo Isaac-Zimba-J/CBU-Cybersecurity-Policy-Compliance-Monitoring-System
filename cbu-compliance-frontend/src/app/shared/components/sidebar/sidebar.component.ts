@@ -24,7 +24,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.currentUser = u;
     });
     this.loadCounts();
-    this.intervalId = setInterval(() => this.loadCounts(), 30000);
+    this.intervalId = setInterval(() => this.loadCounts(), 10000);
   }
 
   ngOnDestroy(): void {

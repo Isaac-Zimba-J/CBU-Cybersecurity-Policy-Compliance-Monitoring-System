@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User, ActivityLog
 from app.schemas.schemas import ActivityLogIngest, ActivityLogOut
-from app.services.compliance_engine import evaluate_log
+from app.services.compliance_engine import record_event
 
 router = APIRouter(prefix="/logs", tags=["Activity Logs"])
 
@@ -18,7 +18,8 @@ def ingest_log(log_data: ActivityLogIngest, db: Session = Depends(get_db)):
     No auth required so agents can post without user credentials.
     In production, secure this with an API key header.
     """
-    log = ActivityLog(
+    log, violations = record_event(
+        db,
         endpoint_id=log_data.endpoint_id,
         endpoint_ip=log_data.endpoint_ip,
         username=log_data.username,
@@ -26,12 +27,6 @@ def ingest_log(log_data: ActivityLogIngest, db: Session = Depends(get_db)):
         event_data=log_data.event_data,
         timestamp=log_data.timestamp,
     )
-    db.add(log)
-    db.flush()
-
-    violations = evaluate_log(db, log)
-    log.processed = True
-
     db.commit()
 
     return {
@@ -39,6 +34,7 @@ def ingest_log(log_data: ActivityLogIngest, db: Session = Depends(get_db)):
         "log_id": log.id,
         "violations_detected": len(violations),
         "violation_ids": [v.id for v in violations],
+        "details": [v.description for v in violations],
     }
 
 
@@ -47,7 +43,8 @@ def ingest_batch(logs: List[ActivityLogIngest], db: Session = Depends(get_db)):
     """Bulk ingest — agent can buffer and send multiple events at once."""
     results = []
     for log_data in logs:
-        log = ActivityLog(
+        log, violations = record_event(
+            db,
             endpoint_id=log_data.endpoint_id,
             endpoint_ip=log_data.endpoint_ip,
             username=log_data.username,
@@ -55,11 +52,12 @@ def ingest_batch(logs: List[ActivityLogIngest], db: Session = Depends(get_db)):
             event_data=log_data.event_data,
             timestamp=log_data.timestamp,
         )
-        db.add(log)
-        db.flush()
-        violations = evaluate_log(db, log)
-        log.processed = True
-        results.append({"log_id": log.id, "violations": len(violations)})
+        results.append({
+            "log_id": log.id,
+            "event_type": log.event_type,
+            "violations": len(violations),
+            "details": [v.description for v in violations],
+        })
 
     db.commit()
     return {"accepted": len(results), "results": results}

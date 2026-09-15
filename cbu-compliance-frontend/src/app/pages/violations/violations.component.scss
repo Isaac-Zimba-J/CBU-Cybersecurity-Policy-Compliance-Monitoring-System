@@ -4,6 +4,20 @@
 .desc-cell { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .ep { font-size: 11px; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
 
+tr.fresh td { animation: flash-in 1.2s ease-out 3; }
+@keyframes flash-in {
+  0%   { background: rgba(248, 113, 113, 0.35); }
+  100% { background: transparent; }
+}
+.badge-new { background: #f87171; color: #fff; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.45; } }
+.live-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
+  &.on .live-dot { background: #4ade80; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6); animation: ping 1.6s infinite; }
+}
+@keyframes ping { 70% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); } }
+
 .detail-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 .detail-row {
   display: flex; align-items: center; gap: 12px;

@@ -74,6 +74,10 @@ export class ApiService {
     return this.http.post<ComplianceRule>(`${this.base}/policies/${policyId}/rules`, data);
   }
 
+  updateRule(policyId: number, ruleId: number, data: any): Observable<ComplianceRule> {
+    return this.http.put<ComplianceRule>(`${this.base}/policies/${policyId}/rules/${ruleId}`, data);
+  }
+
   deleteRule(policyId: number, ruleId: number): Observable<any> {
     return this.http.delete(`${this.base}/policies/${policyId}/rules/${ruleId}`);
   }

@@ -75,28 +75,33 @@
     </div>
 
     <div class="flex-between mb-2">
-      <span class="text-muted" style="font-size:13px">Rules</span>
-      <button class="btn btn-primary btn-sm" (click)="showAddRule = true">+ Add Rule</button>
+      <span class="text-muted" style="font-size:13px">Rules — click Edit to change thresholds, blocked lists or severity. Changes apply to the next event received.</span>
+      <button class="btn btn-primary btn-sm" (click)="openAddRule()">+ Add Rule</button>
     </div>
 
     <div class="rules-manage">
-      <div class="rule-manage-item" *ngFor="let r of selectedPolicy.rules">
+      <div class="rule-manage-item" *ngFor="let r of selectedPolicy.rules" [class.inactive]="!r.is_active" [class.editing]="editingRule?.id === r.id">
         <div>
           <div class="flex gap-1 mb-1">
             <span class="badge badge-{{r.severity}}">{{r.severity}}</span>
             <strong style="font-size:13px">{{r.name}}</strong>
+            <span class="badge badge-false_positive" *ngIf="!r.is_active">Disabled</span>
           </div>
           <div class="text-muted" style="font-size:12px">{{r.rule_type}} · {{r.description}}</div>
           <code class="condition-code">{{r.condition}}</code>
         </div>
-        <button class="btn btn-danger btn-sm" (click)="deleteRule(r)">Delete</button>
+        <div class="flex gap-1 rule-actions">
+          <button class="btn btn-outline btn-sm" (click)="openEditRule(r)">Edit</button>
+          <button class="btn btn-outline btn-sm" (click)="toggleRule(r)">{{r.is_active ? 'Disable' : 'Enable'}}</button>
+          <button class="btn btn-danger btn-sm" (click)="deleteRule(r)">Delete</button>
+        </div>
       </div>
       <div *ngIf="selectedPolicy.rules.length === 0" class="text-muted" style="padding:16px;text-align:center;font-size:13px">No rules yet. Add one above.</div>
     </div>
 
-    <!-- Add Rule Inline -->
+    <!-- Add / Edit Rule Inline -->
     <div class="add-rule-form" *ngIf="showAddRule">
-      <h4 style="margin-bottom:12px;font-size:14px">New Rule</h4>
+      <h4 style="margin-bottom:12px;font-size:14px">{{editingRule ? 'Edit Rule: ' + editingRule.name : 'New Rule'}}</h4>
       <div class="form-group">
         <label>Rule Name *</label>
         <input class="form-control" [(ngModel)]="ruleForm.name" placeholder="e.g. Login Outside Hours"/>
@@ -122,12 +127,20 @@
         </select>
       </div>
       <div class="form-group">
+        <label>Description</label>
+        <input class="form-control" [(ngModel)]="ruleForm.description" placeholder="What this rule enforces"/>
+      </div>
+      <div class="form-group">
         <label>Condition (JSON) *</label>
         <textarea class="form-control" [(ngModel)]="ruleForm.condition" rows="3" style="font-family:monospace;font-size:12px"></textarea>
+        <div class="text-muted" style="font-size:11px;margin-top:4px">{{conditionHint}}</div>
+        <div class="rule-error" *ngIf="ruleError">{{ruleError}}</div>
       </div>
       <div class="flex gap-1">
-        <button class="btn btn-outline btn-sm" (click)="showAddRule = false">Cancel</button>
-        <button class="btn btn-primary btn-sm" (click)="addRule()" [disabled]="saving">{{saving ? 'Adding...' : 'Add Rule'}}</button>
+        <button class="btn btn-outline btn-sm" (click)="closeRuleForm()">Cancel</button>
+        <button class="btn btn-primary btn-sm" (click)="saveRule()" [disabled]="saving">
+          {{saving ? 'Saving...' : (editingRule ? 'Save Changes' : 'Add Rule')}}
+        </button>
       </div>
     </div>
 

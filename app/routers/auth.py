@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -6,14 +6,30 @@ from app.core.database import get_db
 from app.core.security import verify_password, create_access_token, get_current_user, hash_password
 from app.models.user import User, UserRole
 from app.schemas.schemas import Token, UserCreate, UserOut
+from app.services.compliance_engine import record_event
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+PORTAL_ENDPOINT_ID = "CBU-COMPLIANCE-PORTAL"
+
+
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
+        # The portal itself is a monitored endpoint: repeated bad passwords
+        # feed the failed_logins (brute-force) rule.
+        client_ip = request.client.host if request.client else None
+        record_event(
+            db,
+            endpoint_id=PORTAL_ENDPOINT_ID,
+            endpoint_ip=client_ip,
+            username=form_data.username,
+            event_type="login_failed",
+            event_data={"source": "dashboard_login", "client_ip": client_ip},
+        )
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
