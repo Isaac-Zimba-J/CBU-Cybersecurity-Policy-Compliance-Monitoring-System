@@ -70,8 +70,32 @@
 <div class="modal-backdrop" *ngIf="selectedPolicy" (click)="closePolicy()">
   <div class="modal modal-lg" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>{{selectedPolicy.name}}</h2>
-      <button class="btn btn-outline btn-sm" (click)="closePolicy()"><lucide-icon name="x" [size]="14"></lucide-icon></button>
+      <h2>{{selectedPolicy.name}} <span class="text-muted" style="font-size:13px;font-weight:400">v{{selectedPolicy.version}}</span></h2>
+      <div class="flex gap-1">
+        <button class="btn btn-outline btn-sm" (click)="openEditPolicy()">Edit Policy</button>
+        <button class="btn btn-outline btn-sm" (click)="closePolicy()"><lucide-icon name="x" [size]="14"></lucide-icon></button>
+      </div>
+    </div>
+
+    <!-- Edit policy name / description / version -->
+    <div class="add-rule-form" *ngIf="editingPolicyMeta">
+      <h4 style="margin-bottom:12px;font-size:14px">Edit Policy Details</h4>
+      <div class="form-group">
+        <label>Policy Name *</label>
+        <input class="form-control" [(ngModel)]="policyForm.name"/>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea class="form-control" [(ngModel)]="policyForm.description"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Version</label>
+        <input class="form-control" [(ngModel)]="policyForm.version"/>
+      </div>
+      <div class="flex gap-1">
+        <button class="btn btn-outline btn-sm" (click)="editingPolicyMeta = false">Cancel</button>
+        <button class="btn btn-primary btn-sm" (click)="savePolicyMeta()" [disabled]="saving">{{saving ? 'Saving...' : 'Save Details'}}</button>
+      </div>
     </div>
 
     <div class="flex-between mb-2">

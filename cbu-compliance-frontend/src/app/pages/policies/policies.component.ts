@@ -43,6 +43,9 @@ export class PoliciesComponent implements OnInit {
   editingRule: ComplianceRule | null = null;
   ruleError = '';
 
+  editingPolicyMeta = false;
+  policyForm = { name: '', description: '', version: '' };
+
   constructor(private api: ApiService, private auth: AuthService, private cdr: ChangeDetectorRef) {}
   ngOnInit(): void { this.load(); }
 
@@ -68,7 +71,38 @@ export class PoliciesComponent implements OnInit {
     });
   }
 
-  openPolicy(p: Policy): void { this.selectedPolicy = { ...p, rules: [...p.rules] }; this.closeRuleForm(); }
+  openPolicy(p: Policy): void { this.selectedPolicy = { ...p, rules: [...p.rules] }; this.editingPolicyMeta = false; this.closeRuleForm(); }
+
+  openEditPolicy(): void {
+    if (!this.selectedPolicy) return;
+    this.policyForm = {
+      name: this.selectedPolicy.name,
+      description: this.selectedPolicy.description || '',
+      version: this.selectedPolicy.version || '1.0',
+    };
+    this.editingPolicyMeta = true;
+  }
+
+  savePolicyMeta(): void {
+    if (!this.selectedPolicy || !this.policyForm.name) return;
+    this.saving = true;
+    const id = this.selectedPolicy.id;
+    this.api.updatePolicy(id, this.policyForm).subscribe({
+      next: updated => {
+        Object.assign(this.selectedPolicy!, {
+          name: updated.name, description: updated.description, version: updated.version,
+        });
+        const i = this.policies.findIndex(p => p.id === id);
+        if (i > -1) Object.assign(this.policies[i], {
+          name: updated.name, description: updated.description, version: updated.version,
+        });
+        this.editingPolicyMeta = false;
+        this.saving = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.saving = false; this.cdr.detectChanges(); }
+    });
+  }
   closePolicy(): void { this.selectedPolicy = null; this.closeRuleForm(); }
 
   get conditionHint(): string { return CONDITION_HINTS[this.ruleForm.rule_type] || ''; }
