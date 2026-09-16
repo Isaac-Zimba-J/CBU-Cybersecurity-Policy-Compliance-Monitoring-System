@@ -182,45 +182,67 @@ def _conns_via_psutil() -> Optional[list]:
 
 
 def _split_addr(addr: str):
-    """'127.0.0.1.6881' -> ('127.0.0.1', 6881); '*.*' / '*.6881' -> (None, None)."""
+    """Parse an address:port from netstat, both formats:
+    Windows '1.1.1.1:23' / '[::1]:80'  and  BSD/macOS '127.0.0.1.6881' / '::1.80'.
+    '*.*' / '*:*' -> (None, None).
+    """
     if not addr or addr.startswith("*"):
         return None, None
-    host, _, port = addr.rpartition(".")
+    if addr.startswith("["):                       # Windows IPv6: [::1]:80
+        host, _, port = addr.rpartition("]:")
+        host = host.lstrip("[")
+    elif ":" in addr and addr.count(":") == 1:      # Windows IPv4: host:port
+        host, _, port = addr.rpartition(":")
+    else:                                           # BSD/macOS: host.port
+        host, _, port = addr.rpartition(".")
     if not port.isdigit():
         return None, None
     return (host or None), int(port)
 
 
 def _conns_via_netstat() -> list:
-    """Parse `netstat -anv -p tcp` — works on macOS/BSD without root, unlike psutil."""
-    out = []
+    """Parse netstat output. Needs no elevated privileges on macOS or Windows.
+    Windows: `netstat -ano`  ·  macOS/BSD: `netstat -anv -p tcp`.
+    """
+    win = OS_TYPE == "windows"
+    cmd = ["netstat", "-ano"] if win else ["netstat", "-anv", "-p", "tcp"]
     try:
-        raw = subprocess.run(["netstat", "-anv", "-p", "tcp"],
-                             capture_output=True, text=True, timeout=8).stdout
+        raw = subprocess.run(cmd, capture_output=True, text=True, timeout=10).stdout
     except Exception as e:
         log.debug(f"netstat failed: {e}")
-        return out
+        return []
+    out = []
     for line in raw.splitlines():
         parts = line.split()
-        if len(parts) < 6 or not parts[0].startswith("tcp"):
+        if not parts or not parts[0].lower().startswith("tcp"):
             continue
-        status = parts[5]
+        if win:
+            # Proto  Local  Foreign  State  PID
+            if len(parts) < 4:
+                continue
+            local, foreign, status = parts[1], parts[2], parts[3]
+            pid = int(parts[4]) if len(parts) > 4 and parts[4].isdigit() else None
+        else:
+            # Proto Recv-Q Send-Q Local Foreign (state) ... pid
+            if len(parts) < 6:
+                continue
+            local, foreign, status = parts[3], parts[4], parts[5]
+            pid = int(parts[10]) if len(parts) > 10 and parts[10].isdigit() else None
         if status not in _WATCHED_STATES:
             continue
-        dest_ip, dest_port = _split_addr(parts[4])
-        _, local_port = _split_addr(parts[3])
+        dest_ip, dest_port = _split_addr(foreign)
+        _, local_port = _split_addr(local)
         if dest_port is None:
             continue
-        pid = int(parts[10]) if len(parts) > 10 and parts[10].isdigit() else None
         out.append((dest_ip, dest_port, local_port, status, pid))
     return out
 
 
 def _collect_connections() -> list:
     conns = _conns_via_psutil()
-    # psutil denied (macOS) or returned an empty set while the OS clearly has
-    # sockets — fall back to netstat, which needs no elevated privileges.
-    if conns is None or (not conns and OS_TYPE == "darwin"):
+    # psutil denied (returns None) or came back empty — fall back to netstat,
+    # which needs no elevated privileges and works on macOS and Windows.
+    if not conns:
         return _conns_via_netstat()
     return conns
 
