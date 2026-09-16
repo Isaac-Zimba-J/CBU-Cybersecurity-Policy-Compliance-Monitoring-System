@@ -149,21 +149,76 @@ def _pid_name(pid) -> Optional[str]:
             _pid_name_cache[pid] = None
     return _pid_name_cache[pid]
 
-def _iter_connections():
-    """Yields (connection, pid). System-wide if allowed (needs root on macOS), else per process."""
+# ESTABLISHED = live connection, SYN_SENT = attempt in progress (blocked/unreachable
+# ports linger here). The closing states are included so a short-lived outbound
+# connection is still caught on at least one 1-second scan.
+_WATCHED_STATES = ("ESTABLISHED", "SYN_SENT", "FIN_WAIT_1", "FIN_WAIT_2", "CLOSE_WAIT", "LAST_ACK")
+# Conn = (dest_ip, dest_port, local_port, status, pid)
+
+
+def _conns_via_psutil() -> Optional[list]:
+    """System-wide connection list via psutil, or None if the OS denies it.
+
+    On macOS this raises AccessDenied without root and the per-process fallback
+    returns nothing either, so we return None and let netstat take over.
+    """
     try:
+        out = []
         for c in psutil.net_connections(kind="inet"):
-            yield c, c.pid
-        return
+            if c.status in _WATCHED_STATES and c.raddr:
+                out.append((c.raddr.ip, c.raddr.port,
+                            c.laddr.port if c.laddr else None, c.status, c.pid))
+        return out
     except (psutil.AccessDenied, PermissionError):
-        pass
-    for proc in psutil.process_iter(["pid"]):
-        try:
-            conns = proc.net_connections(kind="inet") if hasattr(proc, "net_connections") else proc.connections(kind="inet")
-            for c in conns:
-                yield c, proc.pid
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        return None
+    except Exception as e:
+        log.debug(f"psutil net scan failed: {e}")
+        return None
+
+
+def _split_addr(addr: str):
+    """'127.0.0.1.6881' -> ('127.0.0.1', 6881); '*.*' / '*.6881' -> (None, None)."""
+    if not addr or addr.startswith("*"):
+        return None, None
+    host, _, port = addr.rpartition(".")
+    if not port.isdigit():
+        return None, None
+    return (host or None), int(port)
+
+
+def _conns_via_netstat() -> list:
+    """Parse `netstat -anv -p tcp` — works on macOS/BSD without root, unlike psutil."""
+    out = []
+    try:
+        raw = subprocess.run(["netstat", "-anv", "-p", "tcp"],
+                             capture_output=True, text=True, timeout=8).stdout
+    except Exception as e:
+        log.debug(f"netstat failed: {e}")
+        return out
+    for line in raw.splitlines():
+        parts = line.split()
+        if len(parts) < 6 or not parts[0].startswith("tcp"):
             continue
+        status = parts[5]
+        if status not in _WATCHED_STATES:
+            continue
+        dest_ip, dest_port = _split_addr(parts[4])
+        _, local_port = _split_addr(parts[3])
+        if dest_port is None:
+            continue
+        pid = int(parts[10]) if len(parts) > 10 and parts[10].isdigit() else None
+        out.append((dest_ip, dest_port, local_port, status, pid))
+    return out
+
+
+def _collect_connections() -> list:
+    conns = _conns_via_psutil()
+    # psutil denied (macOS) or returned an empty set while the OS clearly has
+    # sockets — fall back to netstat, which needs no elevated privileges.
+    if conns is None or (not conns and OS_TYPE == "darwin"):
+        return _conns_via_netstat()
+    return conns
+
 
 def collect_network_connections(baseline: bool = False) -> list:
     """Detect new outbound connections — including attempts that never complete (SYN_SENT)."""
@@ -171,17 +226,15 @@ def collect_network_connections(baseline: bool = False) -> list:
     events = []
     try:
         current = set()
-        for conn, pid in _iter_connections():
-            if conn.status not in ("ESTABLISHED", "SYN_SENT") or not conn.raddr:
-                continue
-            key = (conn.raddr.ip, conn.raddr.port)
+        for dest_ip, dest_port, local_port, status, pid in _collect_connections():
+            key = (dest_ip, dest_port, local_port)
             current.add(key)
             if not baseline and key not in _prev_connections:
                 events.append(make_log("network_connection", {
-                    "dest_ip":      conn.raddr.ip,
-                    "dest_port":    conn.raddr.port,
-                    "local_port":   conn.laddr.port if conn.laddr else None,
-                    "status":       conn.status,
+                    "dest_ip":      dest_ip,
+                    "dest_port":    dest_port,
+                    "local_port":   local_port,
+                    "status":       status,
                     "process_name": _pid_name(pid),
                 }))
         _prev_connections = current
@@ -500,19 +553,28 @@ def run(server: str):
     buffer = []
     last_send = 0.0
     while True:
+        tick = time.time()
         try:
             buffer += collect_process_events()
             buffer += collect_network_connections()
+            scan_took = time.time() - tick
 
             if time.time() - last_send >= SEND_INTERVAL:
                 buffer += collect_login_events()
                 buffer += collect_removable_media()
                 buffer += collect_failed_logins()
+                t_send = time.time()
                 if send_logs(server, buffer):
                     buffer = []
                 elif len(buffer) > 2000:
                     buffer = buffer[-2000:]   # server down for a long time: keep the tail
+                send_took = time.time() - t_send
                 last_send = time.time()
+                if send_took > SCAN_INTERVAL:
+                    log.warning(f"Server took {send_took:.1f}s to accept the batch — short-lived events may be missed")
+
+            if scan_took > SCAN_INTERVAL * 2:
+                log.warning(f"Scan took {scan_took:.1f}s (expected <{SCAN_INTERVAL}s) — short-lived events may be missed")
 
         except KeyboardInterrupt:
             log.info("Agent stopped.")

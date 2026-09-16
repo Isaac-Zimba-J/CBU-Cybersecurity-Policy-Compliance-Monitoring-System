@@ -56,13 +56,19 @@ To flag something you already have installed, edit the rule and add the process 
 Rule: `{"blocked_ports": [23, 6881, 4444], "blocked_ips": ["10.0.0.99"]}`
 Connection *attempts* count too (SYN_SENT), so the target does not need to exist.
 
+The reliable trigger is a connection that **stays open for a few seconds** (a snapshot every second has to catch it). A connection attempt to an unreachable host is ideal because it lingers in `SYN_SENT`:
+
 | OS | Do this |
 |----|---------|
-| Windows | `Test-NetConnection 192.168.1.250 -Port 23` in PowerShell, or `telnet 192.168.1.250` if telnet client is enabled |
-| macOS / Linux | `nc -w 5 192.168.1.250 23` (any unused LAN IP works — it will just hang for 5 s) |
-| Any | Terminal 1: `nc -l 6881` · Terminal 2: `nc 127.0.0.1 6881` (type something, Ctrl+C) |
+| Windows | `Test-NetConnection 192.168.1.250 -Port 23` in PowerShell |
+| macOS / Linux | `nc -w 6 192.168.1.250 23 < /dev/null` — pick a LAN IP that does **not** exist so it hangs ~6 s |
+| Any (port 6881, held open) | Terminal 1: `nc -l 6881` · Terminal 2: `nc 127.0.0.1 6881` then **leave it open** (don't type/close for ~6 s) |
 
 Expected: `Connection to blocked port 23 on 192.168.1.250 from <hostname> (process: nc).`
+
+> A connection that opens and closes in under a second (e.g. `curl` to a fast local port) may be missed — that's why the examples keep the socket open. Attempts to a non-existent host, or any real session (browser tab, download), stay open long enough.
+>
+> On **macOS** the agent reads connections via `netstat` (no `sudo` needed). On **Windows/Linux** it uses the OS connection table directly.
 
 To block a real site for the demo: edit the rule and add the site's IP prefix to `blocked_ips` (e.g. `"142.250."` for Google) then open it in a browser.
 
