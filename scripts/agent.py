@@ -108,13 +108,18 @@ def collect_process_events(baseline: bool = False) -> list:
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
 
+        # The fork/exec name race is POSIX-only. On Windows a new process has its
+        # real name immediately, and deferring can DROP a short-lived command
+        # (e.g. `nmap -sT`) that exits before the deferral clears — so report at once.
+        defer_naming = OS_TYPE != "windows"
+
         if not baseline:
             for pid in set(current) - _prev_processes:
                 info = current[pid]
                 cmdline = " ".join(info.get("cmdline") or [])[:200]
                 # Between fork() and exec() the child is a clone of the shell with no
                 # cmdline yet; wait up to 2 scans so we report the real program name.
-                if not cmdline and _pending_processes.get(pid, 0) < 2:
+                if defer_naming and not cmdline and _pending_processes.get(pid, 0) < 2:
                     _pending_processes[pid] = _pending_processes.get(pid, 0) + 1
                     continue
                 _pending_processes.pop(pid, None)
