@@ -35,12 +35,42 @@ pip install -r requirements.txt
 ```
 
 ### 2. Create the PostgreSQL database
-Open pgAdmin or run in a terminal:
+
+**Easiest (recommended for the demo):** just use the built-in `postgres`
+superuser you set a password for during install — no extra user or grants
+needed. Create the database in pgAdmin (right-click Databases → Create), or in
+the **SQL Shell (psql)**:
+```sql
+CREATE DATABASE cybersec_compliance;
+```
+Then in step 3 set `DATABASE_URL` to use `postgres`:
+```
+DATABASE_URL=postgresql://postgres:YOUR_POSTGRES_PASSWORD@localhost:5432/cybersec_compliance
+```
+
+**If you prefer a dedicated user** (`cbu_admin`), you must grant rights on the
+**schema and tables**, not just the database — otherwise the app fails with
+`permission denied for table users`. As the `postgres` superuser, first:
 ```sql
 CREATE DATABASE cybersec_compliance;
 CREATE USER cbu_admin WITH PASSWORD 'yourpassword';
-GRANT ALL PRIVILEGES ON DATABASE cybersec_compliance TO cbu_admin;
+ALTER DATABASE cybersec_compliance OWNER TO cbu_admin;
 ```
+Then, **connected to the `cybersec_compliance` database** (in pgAdmin: open a
+Query Tool on that database; in psql: run `\c cybersec_compliance` first), run:
+```sql
+GRANT ALL ON SCHEMA public TO cbu_admin;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO cbu_admin;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO cbu_admin;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO cbu_admin;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO cbu_admin;
+```
+
+> **Already hit `permission denied for table users`?** Your tables were created
+> by a different user than the one in your `.env`. Two ways out:
+> 1. **Fastest:** change `DATABASE_URL` in `.env` to the `postgres` superuser.
+> 2. Run the `ALTER DATABASE ... OWNER` + `GRANT ...` + `ALTER DEFAULT
+>    PRIVILEGES` blocks above as `postgres`, then retry `python scripts/seed.py`.
 
 ### 3. Configure environment
 
